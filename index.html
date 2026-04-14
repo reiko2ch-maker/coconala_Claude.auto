@@ -1,0 +1,1612 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coconala × Claude Code｜寝てても回る仕組みを手に入れる</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Noto+Serif+JP:wght@400;700;900&family=Cinzel:wght@400;600;700&family=DM+Sans:wght@400;700&display=swap" rel="stylesheet">
+<style>
+
+/* ══════════════════════════════════════════
+NEBULA COLOR SYSTEM
+深紫 #1a0a2e / 紺紫 #16082b / 星空黒 #0d0618
+ゴールド #c9a84c / 淡金 #e8c96a / 白金 #f5e6c0
+紫アクセント #9b5de5 / 薄紫 #c084fc
+テキスト on dark: #f0e6ff (16:1) ✓
+サブ on dark: #c4a8e0 (7:1) ✓
+ゴールド on dark: #c9a84c (5:1) ✓
+══════════════════════════════════════════ */
+:root{
+/* 背景 */
+–bg:        #0d0618;
+–bg1:       #130820;
+–bg2:       #1a0a2e;
+–bg3:       #220d38;
+–bg-card:   #1e0d32;
+–bg-light:  #f4f1f9;
+–bg-white:  #ffffff;
+
+/* テキスト */
+–text:      #f0e6ff;   /* on dark 16:1 ✓ */
+–text-sub:  #c4a8e0;   /* on dark  7:1 ✓ */
+–text-muted:#8b6aaa;   /* on dark  4.5:1 ✓ */
+–ink:       #1a0a2e;   /* on white 17:1 ✓ */
+–ink-sub:   #3d1a5c;   /* on white 10:1 ✓ */
+–ink-muted: #6b4d8a;   /* on white  5:1 ✓ */
+
+/* ゴールド */
+–gold:      #c9a84c;
+–gold-lt:   #e8c96a;
+–gold-pale: #f5e6c0;
+–gold-bg:   rgba(201,168,76,.1);
+–gold-bdr:  rgba(201,168,76,.3);
+
+/* パープル */
+–purple:    #9b5de5;
+–purple-lt: #c084fc;
+–purple-bg: rgba(155,93,229,.12);
+–purple-bdr:rgba(155,93,229,.3);
+
+/* グリーン（Coconala） */
+–coconala:  #00b893;
+
+/* セマンティック */
+–blue:      #6366f1;
+–bluebg:    rgba(99,102,241,.1);
+–bluebdr:   rgba(99,102,241,.3);
+–blueink:   #312e81;
+–green:     #10b981;
+–greenbg:   rgba(16,185,129,.1);
+–greenbdr:  rgba(16,185,129,.3);
+–greenink:  #064e3b;
+–amberbg:   rgba(245,158,11,.1);
+–amberbdr:  rgba(245,158,11,.3);
+–amberink:  #78350f;
+
+–serif:  ‘Noto Serif JP’, serif;
+–sans:   ‘Noto Sans JP’, sans-serif;
+–latin:  ‘DM Sans’, sans-serif;
+–cinzel: ‘Cinzel’, serif;
+–r: 12px;
+–maxw: 740px;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+background:var(–bg);
+font-family:var(–sans);
+font-size:16px;line-height:1.9;
+color:var(–text);
+-webkit-font-smoothing:antialiased;
+overflow-x:hidden;
+}
+
+/* ══ 進捗バー ══ */
+#prog{
+position:fixed;top:0;left:0;height:2px;width:0;
+background:linear-gradient(90deg,#9b5de5,#c9a84c,#e8c96a);
+z-index:999;transition:width .1s linear;
+}
+
+/* ══════════════════════════════
+STAR CANVAS（星空背景）
+══════════════════════════════ */
+#star-canvas{
+position:fixed;top:0;left:0;
+width:100%;height:100%;
+pointer-events:none;
+z-index:0;
+}
+
+/* ══════════════════════════════
+HERO — NEBULA風
+══════════════════════════════ */
+.hero{
+position:relative;
+padding:80px 20px 88px;
+text-align:center;
+overflow:hidden;
+z-index:1;
+}
+
+/* 星雲グロー */
+.hero-glow{
+position:absolute;
+top:50%;left:50%;
+transform:translate(-50%,-55%);
+width:min(700px,120vw);
+height:min(500px,80vw);
+background:
+radial-gradient(ellipse 55% 45% at 40% 55%, rgba(155,93,229,.22) 0%, transparent 55%),
+radial-gradient(ellipse 40% 35% at 65% 40%, rgba(201,168,76,.12) 0%, transparent 50%),
+radial-gradient(ellipse 30% 50% at 20% 70%, rgba(99,102,241,.1) 0%, transparent 55%);
+pointer-events:none;
+}
+
+/* オーブリング */
+.hero-orb{
+position:absolute;
+top:50%;left:50%;
+transform:translate(-50%,-50%);
+width:min(480px,90vw);
+height:min(280px,55vw);
+border:1px solid rgba(201,168,76,.12);
+border-radius:50%;
+pointer-events:none;
+}
+.hero-orb::before{
+content:’’;position:absolute;inset:-30px;
+border:1px solid rgba(155,93,229,.08);
+border-radius:50%;
+}
+
+.hero-in{position:relative;z-index:1;max-width:var(–maxw);margin:0 auto;}
+
+/* ブランドライン */
+.logo{display:inline-flex;flex-direction:column;align-items:center;margin-bottom:32px;}
+.logo-top{
+display:flex;align-items:center;gap:10px;
+margin-bottom:10px;
+}
+.logo-brand{
+font-family:var(–cinzel);
+font-size:clamp(13px,3vw,17px);
+font-weight:600;
+letter-spacing:.12em;
+background:linear-gradient(135deg,#e8c96a,#c9a84c);
+-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+background-clip:text;
+}
+.logo-x{
+font-size:12px;color:rgba(201,168,76,.4);
+font-family:var(–cinzel);
+}
+
+/* ゴールドデコライン */
+.logo-deco{
+display:flex;align-items:center;gap:8px;
+margin-bottom:12px;
+}
+.logo-deco-line{
+width:40px;height:1px;
+background:linear-gradient(90deg,transparent,#c9a84c);
+}
+.logo-deco-line.r{
+background:linear-gradient(270deg,transparent,#c9a84c);
+}
+.logo-deco-diamond{
+width:6px;height:6px;
+background:#c9a84c;
+transform:rotate(45deg);
+box-shadow:0 0 8px rgba(201,168,76,.6);
+}
+
+/* メインタイトル */
+.logo-main{
+font-family:var(–serif);
+font-size:clamp(28px,7vw,52px);
+font-weight:900;
+line-height:1.2;
+letter-spacing:.02em;
+color:#f0e6ff;
+}
+.logo-main .ac{
+background:linear-gradient(135deg,#e8c96a 0%,#c9a84c 40%,#f5e6c0 100%);
+-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+background-clip:text;
+display:inline-block;
+filter:drop-shadow(0 0 20px rgba(201,168,76,.35));
+}
+
+/* サブタイトル */
+.logo-sub{
+font-family:var(–cinzel);
+font-size:clamp(10px,2vw,13px);
+letter-spacing:.3em;
+color:var(–text-muted);
+text-transform:uppercase;
+margin-top:10px;
+}
+
+.hero-desc{
+font-size:15px;color:var(–text-sub);
+max-width:460px;margin:0 auto 32px;
+line-height:1.85;
+}
+
+/* 読了バナー */
+.read-banner{
+display:inline-flex;align-items:center;gap:10px;
+background:rgba(201,168,76,.08);
+border:1px solid rgba(201,168,76,.25);
+border-radius:40px;padding:9px 22px;
+margin-bottom:14px;
+}
+.rb-min{
+font-family:var(–cinzel);font-size:20px;font-weight:700;
+color:var(–gold-lt);line-height:1;
+text-shadow:0 0 12px rgba(201,168,76,.4);
+}
+.rb-lbl{font-size:11px;color:var(–text-muted);line-height:1.4;}
+
+/* 特典バナー */
+.gift-hero{
+display:inline-flex;align-items:center;gap:10px;
+background:linear-gradient(135deg,rgba(16,185,129,.1),rgba(99,102,241,.1));
+border:1px solid rgba(16,185,129,.25);
+border-radius:10px;padding:12px 18px;
+max-width:420px;width:100%;
+}
+.gift-hero-txt{text-align:left;font-size:13px;color:#6ee7b7;line-height:1.6;font-weight:500;}
+
+/* ══════════════════════════════
+目次
+══════════════════════════════ */
+.toc{
+background:rgba(26,10,46,.8);
+backdrop-filter:blur(12px);
+border:1px solid rgba(201,168,76,.15);
+border-radius:var(–r);padding:24px;
+margin:28px 16px;
+position:relative;z-index:1;
+}
+@media(min-width:780px){.toc{margin:28px auto;max-width:var(–maxw);}}
+.toc-lbl{
+font-family:var(–cinzel);
+font-size:10px;font-weight:600;letter-spacing:.25em;
+text-transform:uppercase;
+color:var(–gold);
+display:flex;align-items:center;gap:8px;margin-bottom:14px;
+}
+.toc-lbl::before{content:’’;display:block;width:16px;height:1px;background:var(–gold);opacity:.6;}
+.toc ol{list-style:none;counter-reset:t;display:flex;flex-direction:column;gap:1px;}
+.toc ol li{counter-increment:t;}
+.toc ol li a{
+display:flex;align-items:center;gap:9px;padding:8px 9px;
+border-radius:6px;text-decoration:none;
+color:var(–text-sub);font-size:13px;line-height:1.5;
+transition:background .15s,color .15s;
+}
+.toc ol li a:hover{background:rgba(201,168,76,.08);color:var(–gold-lt);}
+.toc ol li a::before{
+content:counter(t,decimal-leading-zero);
+font-family:var(–cinzel);
+font-size:10px;font-weight:600;color:var(–gold);
+min-width:22px;flex-shrink:0;opacity:.8;
+}
+
+/* ══════════════════════════════
+セクション共通（白カード）
+══════════════════════════════ */
+.sec{
+background:var(–bg-white);
+border-radius:var(–r);
+padding:40px 26px;margin:18px 16px;
+opacity:0;transform:translateY(16px);
+transition:opacity .6s ease,transform .6s ease;
+position:relative;z-index:1;
+}
+@media(min-width:780px){.sec{margin:18px auto;max-width:var(–maxw);}}
+.sec.show{opacity:1;transform:translateY(0);}
+
+.stag{
+display:inline-flex;align-items:center;
+font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+color:var(–blue);background:var(–bluebg);border:1px solid var(–bluebdr);
+padding:3px 9px;border-radius:20px;margin-bottom:11px;
+}
+h2.st{
+font-family:var(–serif);
+font-size:clamp(18px,3.5vw,25px);font-weight:700;color:var(–ink);
+line-height:1.45;margin-bottom:20px;padding-bottom:14px;
+border-bottom:2px solid #ede8f5;position:relative;
+}
+h2.st::after{content:’’;position:absolute;bottom:-2px;left:0;width:40px;height:2px;background:var(–purple);}
+p.bt{font-size:15px;line-height:1.9;color:var(–ink);margin-bottom:15px;}
+p.bt:last-child{margin-bottom:0;}
+
+.lead{
+background:linear-gradient(135deg,rgba(99,102,241,.07),rgba(155,93,229,.07));
+border-left:4px solid var(–purple);
+border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:22px;
+}
+.lead p{font-size:15px;line-height:1.85;color:var(–ink-sub);margin:0;}
+
+.qb{
+background:linear-gradient(135deg,var(–bg2),var(–bg3));
+border:1px solid rgba(201,168,76,.2);
+border-radius:var(–r);padding:22px 26px;margin:22px 0;position:relative;
+}
+.qb::before{
+content:’”’;position:absolute;top:4px;left:14px;
+font-size:44px;line-height:1;
+color:rgba(201,168,76,.2);font-family:var(–serif);
+}
+.qb p{
+font-family:var(–serif);
+font-size:15px;font-weight:700;line-height:1.8;
+color:var(–gold-pale);padding-left:20px;margin:0;
+}
+
+.cb{border-radius:var(–r);padding:14px 18px;margin:16px 0;}
+.cb.blue{background:var(–bluebg);border:1px solid var(–bluebdr);}
+.cb.green{background:var(–greenbg);border:1px solid var(–greenbdr);}
+.cb.amber{background:var(–amberbg);border:1px solid var(–amberbdr);}
+.cb-lbl{font-size:10px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;margin-bottom:6px;}
+.cb.blue .cb-lbl{color:var(–blue);}.cb.green .cb-lbl{color:#065f46;}.cb.amber .cb-lbl{color:#92400e;}
+.cb p{font-size:14px;line-height:1.8;margin:0;}
+.cb.blue p{color:var(–blueink);}.cb.green p{color:var(–greenink);}.cb.amber p{color:var(–amberink);}
+hr.dv{border:none;border-top:1px solid #ede8f5;margin:24px 0;}
+
+/* 比較 */
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:20px 0;}
+@media(max-width:460px){.cmp{grid-template-columns:1fr;}}
+.cc{border-radius:var(–r);padding:16px 14px;}
+.cc.bad{background:#fef2f2;border:1px solid #fecaca;}
+.cc.good{background:#ecfdf5;border:1px solid #a7f3d0;}
+.cc-h{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid currentColor;opacity:.8;}
+.cc.bad .cc-h{color:#991b1b;}.cc.good .cc-h{color:#065f46;}
+.cc-r{font-size:12px;line-height:1.6;padding:4px 0;border-bottom:1px solid;display:flex;align-items:flex-start;gap:5px;}
+.cc.bad .cc-r{color:#7f1d1d;border-color:#fecaca;}
+.cc.good .cc-r{color:#064e3b;border-color:#a7f3d0;}
+.cc-r:last-child{border-bottom:none;}
+.cc-r::before{font-size:10px;flex-shrink:0;margin-top:4px;}
+.cc.bad .cc-r::before{content:‘✕’;color:#dc2626;}.cc.good .cc-r::before{content:‘✓’;color:#059669;}
+
+/* 構造マップ */
+.sdiag{
+background:linear-gradient(135deg,var(–bg2),var(–bg3));
+border:1px solid rgba(201,168,76,.15);
+border-radius:var(–r);padding:24px 18px;margin:20px 0;
+}
+.sdiag-t{
+text-align:center;font-size:11px;font-weight:700;
+letter-spacing:.13em;text-transform:uppercase;
+color:var(–gold);margin-bottom:18px;
+}
+.sgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;}
+@media(min-width:500px){.sgrid{grid-template-columns:repeat(4,1fr);}}
+.si{
+background:rgba(255,255,255,.04);
+border:1px solid rgba(201,168,76,.12);
+border-radius:7px;padding:11px 8px;text-align:center;
+transition:border-color .2s,background .2s;
+}
+.si:hover{background:rgba(201,168,76,.08);border-color:rgba(201,168,76,.3);}
+.si-n{font-size:9px;font-weight:700;color:var(–gold);margin-bottom:4px;}
+.si-t{font-size:11px;font-weight:700;color:var(–text);margin-bottom:2px;line-height:1.3;}
+.si-d{font-size:9px;color:var(–text-muted);line-height:1.4;}
+.sarr{text-align:center;padding:10px 0 5px;}
+.sres{
+background:linear-gradient(135deg,#c9a84c,#e8c96a);
+border-radius:7px;padding:12px 16px;text-align:center;
+}
+.sres-l{font-size:10px;font-weight:700;color:rgba(26,10,46,.7);letter-spacing:.08em;margin-bottom:2px;}
+.sres-t{font-family:var(–serif);font-size:15px;font-weight:700;color:#1a0a2e;}
+
+/* SNS vs Coconala */
+.plat{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:20px 0;}
+@media(max-width:460px){.plat{grid-template-columns:1fr;}}
+.pc{border-radius:var(–r);padding:16px 14px;text-align:center;}
+.pc.sns{background:#f8f7fc;border:1px solid #e2ddf0;}
+.pc.cnl{
+background:linear-gradient(135deg,var(–bg2),var(–bg3));
+border:1px solid rgba(0,184,147,.3);
+}
+.pc-ico{font-size:20px;margin-bottom:6px;}
+.pc-t{font-size:12px;font-weight:700;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid;}
+.pc.sns .pc-t{color:#4a3b6e;border-color:#e2ddf0;}
+.pc.cnl .pc-t{color:#6ee7b7;border-color:rgba(0,184,147,.3);}
+.pc-r{font-size:11px;padding:4px 0;border-bottom:1px solid;line-height:1.5;}
+.pc.sns .pc-r{color:#6b4d8a;border-color:#ede8f5;}
+.pc.cnl .pc-r{color:var(–text-sub);border-color:rgba(255,255,255,.06);}
+.pc-r:last-child{border-bottom:none;}
+
+/* Claude Code フロー */
+.ccdiag{
+background:linear-gradient(135deg,var(–bg2),var(–bg3));
+border:1px solid rgba(155,93,229,.2);
+border-radius:var(–r);padding:22px 18px;margin:20px 0;
+}
+.ccdiag-t{text-align:center;font-size:12px;font-weight:700;color:var(–text);margin-bottom:16px;}
+.ccflow{display:flex;flex-direction:column;align-items:center;}
+.ccs{
+width:100%;max-width:380px;
+background:rgba(255,255,255,.05);
+border:1px solid rgba(155,93,229,.2);
+border-radius:7px;padding:11px 13px;display:flex;align-items:center;gap:10px;
+}
+.ccs-ico{
+width:32px;height:32px;flex-shrink:0;
+background:rgba(155,93,229,.2);border-radius:7px;
+display:flex;align-items:center;justify-content:center;font-size:14px;
+}
+.ccs-l{font-size:11px;font-weight:700;color:var(–purple-lt);margin-bottom:1px;}
+.ccs-d{font-size:10px;color:var(–text-sub);line-height:1.4;}
+.cca{color:rgba(255,255,255,.2);font-size:15px;padding:2px 0;}
+.ccchips{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:100%;max-width:380px;margin-top:3px;}
+.ccchip{
+background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);
+border-radius:5px;padding:6px 7px;text-align:center;
+font-size:10px;font-weight:700;color:#6ee7b7;
+}
+
+/* 勘違いリスト */
+.mlist{display:flex;flex-direction:column;gap:8px;margin:16px 0;}
+.mi{background:#faf9ff;border:1px solid #ede8f5;border-radius:7px;padding:13px 14px 13px 48px;position:relative;}
+.mi-n{
+position:absolute;left:13px;top:13px;
+width:23px;height:23px;
+background:linear-gradient(135deg,var(–bg2),var(–bg3));
+color:var(–gold);
+font-size:10px;font-weight:700;border-radius:50%;
+display:flex;align-items:center;justify-content:center;
+}
+.mi-t{font-size:13px;font-weight:700;color:var(–ink);margin-bottom:3px;}
+.mi-b{font-size:12px;color:var(–ink-muted);line-height:1.65;}
+
+/* ポイントカード */
+.pcards{display:flex;flex-direction:column;gap:8px;margin:16px 0;}
+.pcard{background:#f4f1fb;border-radius:7px;padding:13px 16px;display:flex;gap:11px;align-items:flex-start;}
+.pcard-ico{
+width:28px;height:28px;flex-shrink:0;
+background:linear-gradient(135deg,var(–purple),#7c3aed);
+border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;
+}
+.pcard-t{font-size:13px;font-weight:700;color:var(–ink);margin-bottom:2px;}
+.pcard-d{font-size:12px;color:var(–ink-muted);line-height:1.6;}
+
+/* ══════════════════════════════
+実績セクション（NEBULA dark）
+══════════════════════════════ */
+.result-sec{
+background:linear-gradient(160deg,var(–bg2) 0%,var(–bg3) 100%);
+border:1px solid rgba(201,168,76,.15);
+border-radius:var(–r);padding:40px 26px;margin:18px 16px;
+opacity:0;transform:translateY(16px);
+transition:opacity .6s ease,transform .6s ease;
+position:relative;overflow:hidden;z-index:1;
+}
+.result-sec::before{
+content:’’;position:absolute;inset:0;
+background:
+radial-gradient(ellipse 60% 40% at 20% 20%,rgba(155,93,229,.08) 0%,transparent 60%),
+radial-gradient(ellipse 40% 50% at 80% 80%,rgba(201,168,76,.06) 0%,transparent 55%);
+pointer-events:none;
+}
+@media(min-width:780px){.result-sec{margin:18px auto;max-width:var(–maxw);}}
+.result-sec.show{opacity:1;transform:translateY(0);}
+
+.res-stag{
+display:inline-flex;align-items:center;
+font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+color:var(–gold);background:var(–gold-bg);
+border:1px solid var(–gold-bdr);
+padding:3px 9px;border-radius:20px;margin-bottom:11px;
+position:relative;z-index:1;
+}
+.res-ttl{
+font-family:var(–serif);
+font-size:clamp(18px,3.5vw,25px);font-weight:700;
+color:var(–text);line-height:1.45;
+margin-bottom:6px;padding-bottom:14px;
+border-bottom:1px solid rgba(201,168,76,.15);
+position:relative;z-index:1;
+}
+.res-ttl::after{content:’’;position:absolute;bottom:-1px;left:0;width:40px;height:2px;background:var(–gold);}
+.res-lead{font-size:14px;color:var(–text-muted);margin-bottom:24px;line-height:1.75;position:relative;z-index:1;}
+
+/* 50万カード */
+.deal-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;position:relative;z-index:1;}
+@media(max-width:460px){.deal-grid{grid-template-columns:1fr;}}
+.deal-card{
+background:rgba(255,255,255,.04);
+border:1px solid rgba(201,168,76,.15);
+border-radius:10px;overflow:hidden;
+transition:border-color .2s,transform .2s;
+}
+.deal-card:hover{border-color:rgba(201,168,76,.45);transform:translateY(-2px);}
+.mock-ui{background:#f7f8fa;padding:14px 14px 12px;border-bottom:1px solid rgba(255,255,255,.08);}
+.mock-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.mock-tabs{display:flex;}.mock-tab{font-size:10px;font-weight:700;padding:5px 10px;border-bottom:2px solid transparent;color:#94a3b8;}
+.mock-tab.active{color:#00b893;border-color:#00b893;}
+.mock-status-chip{font-size:9px;font-weight:700;background:#e0f7f3;color:#00805e;padding:3px 8px;border-radius:20px;}
+.mock-product-row{display:flex;align-items:center;gap:8px;background:#fff;border-radius:7px;padding:8px 10px;margin-bottom:8px;border:1px solid #e8ecf4;}
+.mock-product-thumb{width:32px;height:32px;flex-shrink:0;background:linear-gradient(135deg,#6366f1,#9b5de5);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:14px;}
+.mock-product-name{font-size:10px;font-weight:700;color:#1a2535;line-height:1.3;}
+.mock-amount-row{display:flex;justify-content:space-between;align-items:center;background:#fff;border-radius:7px;padding:8px 10px;border:2px solid #ff4f5e;}
+.mock-amount-lbl{font-size:10px;color:#475569;}
+.mock-amount-val{font-family:var(–latin);font-size:18px;font-weight:700;color:#0f1923;}
+.mock-date-row{display:flex;justify-content:space-between;padding:6px 10px 0;}
+.mock-date-lbl{font-size:9px;color:#94a3b8;}.mock-date-val{font-size:9px;color:#475569;}
+.mock-steps{display:flex;align-items:center;padding:8px 10px 0;justify-content:space-between;}
+.mock-step{display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;}
+.mock-step-dot{width:12px;height:12px;border-radius:50%;border:2px solid #d1d5db;background:#fff;}
+.mock-step-dot.done{background:#00b893;border-color:#00b893;}
+.mock-step-dot.active{background:#fff;border-color:#00b893;border-width:3px;}
+.mock-step-lbl{font-size:8px;color:#94a3b8;white-space:nowrap;}
+.mock-step-lbl.active{color:#00b893;font-weight:700;}
+.mock-step-line{flex:1;height:2px;background:#d1d5db;margin-top:-7px;}
+.mock-step-line.done{background:#00b893;}
+.deal-card-body{padding:12px 14px;}
+.deal-badge{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(–gold);background:var(–gold-bg);border:1px solid var(–gold-bdr);padding:2px 7px;border-radius:20px;margin-bottom:7px;}
+.deal-ttl{font-size:12px;font-weight:700;color:var(–text);line-height:1.4;margin-bottom:6px;}
+.deal-amount{font-family:var(–cinzel);font-size:22px;font-weight:700;color:var(–gold-lt);line-height:1;}
+.deal-amount span{font-size:11px;color:var(–text-muted);font-weight:400;margin-left:2px;}
+.deal-note{font-size:11px;color:var(–text-muted);line-height:1.55;margin-top:5px;}
+
+/* ダッシュボード */
+.dashboard-card{background:rgba(255,255,255,.04);border:1px solid rgba(201,168,76,.15);border-radius:10px;overflow:hidden;margin-bottom:16px;position:relative;z-index:1;}
+.dashboard-card:hover{border-color:rgba(201,168,76,.35);}
+.dash-header{background:#fff;padding:14px 16px 0;border-bottom:1px solid rgba(255,255,255,.08);}
+.dash-header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.dash-header-title{font-size:13px;font-weight:700;color:#1a2535;}
+.dash-period-chip{font-size:9px;color:#475569;background:#f0f2f7;border:1px solid #e2e8f0;padding:3px 8px;border-radius:5px;display:flex;align-items:center;gap:4px;}
+.dash-tabs{display:flex;gap:0;border-bottom:2px solid #e8ecf4;}
+.dash-tab{font-size:11px;font-weight:700;padding:6px 14px;border-bottom:2px solid transparent;margin-bottom:-2px;color:#94a3b8;}
+.dash-tab.active{color:#00b893;border-color:#00b893;}
+.kpi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:0;}
+@media(min-width:420px){.kpi-grid{grid-template-columns:repeat(4,1fr);}}
+.kpi-cell{padding:14px 14px;border-right:1px solid rgba(255,255,255,.07);border-bottom:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.03);}
+.kpi-cell:nth-child(2n){border-right:none;}
+@media(min-width:420px){.kpi-cell:nth-child(2n){border-right:1px solid rgba(255,255,255,.07);}.kpi-cell:last-child{border-right:none;}}
+.kpi-lbl{font-size:9px;color:#64748b;margin-bottom:4px;letter-spacing:.05em;}
+.kpi-val{font-family:var(–cinzel);font-size:17px;font-weight:700;color:#34d399;line-height:1;margin-bottom:2px;}
+.kpi-val.main{font-size:20px;color:var(–gold-lt);}
+.kpi-sub{font-size:9px;color:#475569;}
+.mini-chart-wrap{padding:12px 16px 0;background:rgba(255,255,255,.02);}
+.mini-chart-lbl{font-size:9px;color:#64748b;margin-bottom:6px;letter-spacing:.05em;text-transform:uppercase;}
+.mini-bars{display:flex;align-items:flex-end;gap:3px;height:40px;}
+.mb{flex:1;border-radius:3px 3px 0 0;background:rgba(155,93,229,.25);transition:background .2s;}
+.mb:hover{background:rgba(155,93,229,.5);}
+.mb.peak{background:linear-gradient(180deg,var(–gold-lt),var(–gold));}
+.dash-body{padding:16px 16px;}
+.dash-badge{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:#34d399;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);padding:2px 7px;border-radius:20px;margin-bottom:10px;}
+.dash-ttl{font-size:13px;font-weight:700;color:var(–text);margin-bottom:5px;line-height:1.45;}
+.dash-note{font-size:13px;color:var(–text-muted);line-height:1.7;}
+.tl-badge{display:flex;align-items:flex-start;gap:10px;background:linear-gradient(135deg,rgba(16,185,129,.08),rgba(99,102,241,.08));border:1px solid rgba(16,185,129,.2);border-radius:10px;padding:14px 16px;position:relative;z-index:1;}
+.tl-icon{font-size:20px;flex-shrink:0;margin-top:2px;}
+.tl-txt{font-size:13px;color:var(–text-sub);line-height:1.75;}
+.tl-txt strong{color:var(–text);}
+
+/* ══ 本物実績バナー ══ */
+.real-proof-banner{position:relative;z-index:1;margin-top:20px;text-decoration:none;display:block;}
+.rpb-inner{background:linear-gradient(135deg,var(–bg) 0%,var(–bg2) 50%,var(–bg) 100%);border:1px solid rgba(201,168,76,.2);border-radius:12px;padding:22px 22px;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s,border-color .2s;}
+.real-proof-banner:hover .rpb-inner{transform:translateY(-2px);box-shadow:0 12px 40px rgba(0,0,0,.5);border-color:rgba(201,168,76,.5);}
+.rpb-inner::before{content:’’;position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 20% 50%,rgba(201,168,76,.07) 0%,transparent 60%),radial-gradient(ellipse 40% 60% at 80% 50%,rgba(99,102,241,.05) 0%,transparent 60%);pointer-events:none;}
+.rpb-inner::after{content:’’;position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,var(–gold-lt),var(–gold),var(–gold-lt));}
+.rpb-content{display:flex;align-items:center;gap:16px;position:relative;z-index:1;}
+.rpb-seal{flex-shrink:0;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(–gold-lt),var(–gold));display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 0 20px rgba(201,168,76,.4);font-size:10px;font-weight:900;color:#1a0a2e;line-height:1.2;text-align:center;letter-spacing:-.01em;}
+.rpb-text{flex:1;}
+.rpb-label{font-family:var(–cinzel);font-size:9px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(–gold);margin-bottom:4px;display:flex;align-items:center;gap:6px;}
+.rpb-label::before{content:’’;display:block;width:20px;height:1px;background:linear-gradient(90deg,var(–gold),transparent);}
+.rpb-title{font-family:var(–serif);font-size:clamp(13px,3.5vw,17px);font-weight:900;color:var(–text);line-height:1.4;margin-bottom:5px;}
+.rpb-title .gold{background:linear-gradient(135deg,var(–gold-lt),var(–gold-pale));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.rpb-sub{font-size:12px;color:var(–text-muted);line-height:1.5;}
+.rpb-arrow{flex-shrink:0;width:34px;height:34px;background:var(–gold-bg);border:1px solid var(–gold-bdr);border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background .2s,transform .2s;}
+.real-proof-banner:hover .rpb-arrow{background:rgba(201,168,76,.25);transform:translateX(3px);}
+.rpb-tape{background:rgba(201,168,76,.05);border-top:1px solid rgba(201,168,76,.15);padding:7px 22px 7px 26px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:1;}
+.rpb-tape-left{display:flex;align-items:center;gap:6px;font-size:10px;color:var(–text-muted);}
+.rpb-tape-dot{width:6px;height:6px;border-radius:50%;background:var(–gold);animation:pulse-gold 2s infinite;}
+@keyframes pulse-gold{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(.8);}}
+.rpb-tape-right{font-size:10px;font-weight:700;color:var(–gold);display:flex;align-items:center;gap:4px;}
+
+/* ══ モニター生実績 ══ */
+.monitor-sec{
+background:var(–bg-white);
+border-radius:var(–r);padding:40px 26px;margin:18px 16px;
+opacity:0;transform:translateY(16px);
+transition:opacity .6s ease,transform .6s ease;
+position:relative;z-index:1;
+}
+@media(min-width:780px){.monitor-sec{margin:18px auto;max-width:var(–maxw);}}
+.monitor-sec.show{opacity:1;transform:translateY(0);}
+.monitor-stag{display:inline-flex;align-items:center;font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#7c3aed;background:#f5f3ff;border:1px solid #ddd6fe;padding:3px 9px;border-radius:20px;margin-bottom:11px;}
+.monitor-ttl{font-family:var(–serif);font-size:clamp(18px,3.5vw,25px);font-weight:700;color:var(–ink);line-height:1.45;margin-bottom:6px;padding-bottom:14px;border-bottom:2px solid #ede8f5;position:relative;}
+.monitor-ttl::after{content:’’;position:absolute;bottom:-2px;left:0;width:40px;height:2px;background:#7c3aed;}
+.monitor-lead{font-size:14px;color:var(–ink-muted);margin-bottom:24px;line-height:1.75;}
+.voice-grid{display:flex;flex-direction:column;gap:16px;margin-bottom:24px;}
+.voice-card{background:#faf9ff;border-radius:10px;overflow:hidden;border:1px solid #ede8f5;transition:border-color .2s,transform .15s;}
+.voice-card:hover{border-color:#c4b5fd;transform:translateY(-2px);}
+.voice-bubble{background:#fff;border-bottom:1px solid #ede8f5;padding:16px 18px;position:relative;}
+.voice-bubble::before{content:’’;position:absolute;left:22px;bottom:-8px;width:14px;height:14px;background:#fff;border-right:1px solid #ede8f5;border-bottom:1px solid #ede8f5;transform:rotate(45deg);z-index:0;}
+.voice-text{font-size:13px;line-height:1.8;color:var(–ink);position:relative;z-index:1;}
+.voice-text strong{color:#7c3aed;}
+.voice-stats{background:#f5f3ff;padding:14px 18px;}
+.voice-stats-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.voice-stats-title{font-size:11px;font-weight:700;color:var(–ink-sub);}
+.voice-period-chip{font-size:9px;color:#6b4d8a;background:#fff;border:1px solid #ddd6fe;padding:2px 7px;border-radius:10px;font-weight:700;}
+.voice-kpi-row{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px;}
+.voice-kpi{background:#fff;border:1px solid #ddd6fe;border-radius:7px;padding:9px 10px;}
+.voice-kpi-val{font-family:var(–cinzel);font-size:16px;font-weight:700;color:var(–blue);line-height:1;margin-bottom:2px;}
+.voice-kpi-val.gold{color:#b45309;}
+.voice-kpi-lbl{font-size:9px;color:#6b4d8a;}
+.voice-progress{margin-top:4px;}
+.voice-progress-lbl{display:flex;justify-content:space-between;font-size:9px;color:#6b4d8a;margin-bottom:4px;}
+.voice-progress-bar{height:5px;background:#ede8f5;border-radius:3px;overflow:hidden;}
+.voice-progress-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#7c3aed,#9b5de5);}
+.voice-progress-fill.green{background:linear-gradient(90deg,#059669,#34d399);}
+.voice-mini-bars{display:flex;align-items:flex-end;gap:3px;height:28px;margin-top:8px;}
+.vmb{flex:1;border-radius:2px 2px 0 0;background:#ddd6fe;}
+.vmb.hi{background:linear-gradient(180deg,#7c3aed,#9b5de5);}
+.voice-user{display:flex;align-items:center;gap:10px;padding:10px 18px;background:#fff;border-top:1px solid #ede8f5;}
+.voice-avatar{width:28px;height:28px;flex-shrink:0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;}
+.voice-name{font-size:11px;font-weight:700;color:var(–ink-sub);}
+.voice-period-badge{margin-left:auto;font-size:9px;font-weight:700;background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe;padding:2px 7px;border-radius:10px;}
+.monitor-summary{background:linear-gradient(135deg,#f5f3ff,#eff6ff);border:1px solid #c4b5fd;border-radius:10px;padding:18px 20px;}
+.monitor-summary-ttl{font-size:13px;font-weight:700;color:#4c1d95;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.monitor-sum-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.msum-item{text-align:center;padding:8px 4px;}
+.msum-val{font-family:var(–cinzel);font-size:17px;font-weight:700;color:#7c3aed;line-height:1;margin-bottom:2px;}
+.msum-lbl{font-size:9px;color:#6b7280;line-height:1.3;}
+
+/* ══ LINE CTA ══ */
+.cta-sec{
+background:linear-gradient(135deg,var(–bg2),var(–bg3));
+border:1px solid rgba(201,168,76,.15);
+border-radius:var(–r);padding:40px 26px;margin:18px 16px;
+opacity:0;transform:translateY(16px);
+transition:opacity .6s ease,transform .6s ease;
+position:relative;z-index:1;
+}
+@media(min-width:780px){.cta-sec{margin:18px auto;max-width:var(–maxw);}}
+.cta-sec.show{opacity:1;transform:translateY(0);}
+.cta-stag{display:inline-flex;font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#34d399;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.25);padding:3px 9px;border-radius:20px;margin-bottom:12px;}
+.cta-ttl{font-family:var(–serif);font-size:clamp(17px,3.5vw,23px);font-weight:700;color:var(–text);margin-bottom:6px;line-height:1.45;}
+.cta-sub{font-size:13px;color:var(–text-muted);margin-bottom:20px;line-height:1.7;}
+.gift-card{background:rgba(255,255,255,.04);border:1px solid rgba(16,185,129,.25);border-radius:var(–r);padding:20px;margin-bottom:20px;position:relative;overflow:hidden;}
+.gift-card::before{content:’’;position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#10b981,#06b6d4);}
+.gift-card-ttl{font-size:10px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:#34d399;margin-bottom:9px;}
+.gift-card p{font-size:13px;color:var(–text-sub);line-height:1.8;margin:0;}
+.gift-card strong{color:var(–text);}
+.line-btn{display:flex;align-items:center;justify-content:center;gap:11px;background:linear-gradient(135deg,#06c755,#00a84f);color:#fff;font-size:14px;font-weight:700;padding:15px 24px;border-radius:50px;text-decoration:none;box-shadow:0 4px 18px rgba(6,199,85,.3);margin-bottom:12px;transition:transform .15s,box-shadow .15s;}
+.line-btn:hover{transform:translateY(-2px);box-shadow:0 7px 24px rgba(6,199,85,.4);}
+.cta-note{font-size:11px;color:var(–text-muted);text-align:center;line-height:1.65;}
+
+footer{
+text-align:center;padding:60px 20px 40px;
+color:var(–text-muted);font-size:11px;letter-spacing:.1em;
+position:relative;z-index:1;
+}
+
+</style>
+</head>
+<body>
+<div id="prog"></div>
+<canvas id="star-canvas"></canvas>
+
+<!-- HERO -->
+
+<header class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-orb"></div>
+  <div class="hero-in">
+
+```
+<div class="logo">
+  <div class="logo-top">
+    <span class="logo-brand">Coconala</span>
+    <span class="logo-x">×</span>
+    <span class="logo-brand">Claude Code</span>
+  </div>
+  <div class="logo-deco">
+    <div class="logo-deco-line"></div>
+    <div class="logo-deco-diamond"></div>
+    <div class="logo-deco-line r"></div>
+  </div>
+  <div class="logo-main">
+    <span class="ac">"寝てても回る仕組み"</span>を<br>手に入れる
+  </div>
+  <div class="logo-sub">Coconala × AI Automation System</div>
+</div>
+
+<p class="hero-desc">魔法でも完全放置でもありません。<br>売上が「点」から「流れ」に変わる、設計の話をします。</p>
+
+<div class="read-banner">
+  <span style="font-size:17px;">⏱</span>
+  <div>
+    <div class="rb-min">約 10 分</div>
+    <div class="rb-lbl">で読めます ／ 特典あり・最後までお読みください</div>
+  </div>
+</div>
+<br>
+<div class="gift-hero">
+  <span style="font-size:19px;flex-shrink:0;">🎁</span>
+  <div class="gift-hero-txt">最後まで読んでくださった方への<br><strong style="color:#fff;">限定プレゼントを用意しています</strong></div>
+</div>
+```
+
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="toc-lbl">Contents</div>
+  <ol>
+    <li><a href="#s1">売れる人と売れない人の差は、努力量ではありませんでした</a></li>
+    <li><a href="#results">📊 実際の数字をお見せします</a></li>
+    <li><a href="#monitors">🌟 モニター生の実績</a></li>
+    <li><a href="#s2">「構造」という言葉を具体的に定義する</a></li>
+    <li><a href="#s3">Coconalaがこの仕組みと相性が良い理由</a></li>
+    <li><a href="#s4">Claude Codeをどう活用しているか</a></li>
+    <li><a href="#s5">売れない人がやりがちな6つの勘違い</a></li>
+    <li><a href="#s6">最初に持つべき視点</a></li>
+    <li><a href="#s7">難しさについても正直にお伝えします</a></li>
+    <li><a href="#cta">🎁 読者限定プレゼント</a></li>
+  </ol>
+</nav>
+
+<!-- 導入 -->
+
+<div class="sec show" id="intro">
+  <div class="lead"><p>はじめに正直にお伝えします。「寝てても回る」という言葉は、聞く方によっては眉をひそめるかもしれません。胡散臭い、怪しい——そう感じるのは当然のことだと思っています。</p></div>
+  <p class="bt">だからこそ、その言葉の正体を全部説明します。</p>
+  <p class="bt"><strong>魔法でも、完全放置でもありません。</strong><br>「自分が動いていない時間にも、売上の導線が機能し続けている状態」のことです。</p>
+  <p class="bt">それを作るのは、ツールの話でも根性論でもなく、<strong>設計の話</strong>です。</p>
+</div>
+
+<!-- S1 -->
+
+<div class="sec" id="s1">
+  <span class="stag">Section 01</span>
+  <h2 class="st">売れる人と売れない人の差は、<br>努力量ではありませんでした</h2>
+  <p class="bt">ここ数ヶ月、Coconalaで複数の商品を出してきました。まず気づいたことをお伝えします。</p>
+  <p class="bt">売上が立つ日と立たない日がありました。しかし、その差は「その日どれだけ作業したか」とほぼ連動していなかったのです。</p>
+  <p class="bt">頑張った日に売れるとは限らない。何もしていない日に注文が入ることがある。ある時点で、こう気づきました。</p>
+  <div class="qb"><p>売上を決めているのは、今この瞬間の努力量ではなく、過去に作った構造だ。</p></div>
+  <div class="cmp">
+    <div class="cc bad">
+      <div class="cc-h"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>よくある誤解</div>
+      <div class="cc-r">頑張った日に売れる</div>
+      <div class="cc-r">投稿数を増やせば売上が上がる</div>
+      <div class="cc-r">作業時間に比例して結果が出る</div>
+      <div class="cc-r">今日の努力が今日の売上になる</div>
+    </div>
+    <div class="cc good">
+      <div class="cc-h"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>実際の構造</div>
+      <div class="cc-r">構造が整った時に売れる</div>
+      <div class="cc-r">設計の質が売上を決める</div>
+      <div class="cc-r">過去に作った仕組みが機能する</div>
+      <div class="cc-r">動いていない時間にも売上が立つ</div>
+    </div>
+  </div>
+</div>
+
+<!-- 実績セクション -->
+
+<div class="result-sec" id="results">
+  <span class="res-stag">実績</span>
+  <h2 class="res-ttl">実際の数字をお見せします</h2>
+  <p class="res-lead">「本当に稼げるの？」という疑問に、正直にお答えします。<br>これは特別な才能の話でも、運の話でもありません。<strong style="color:#e2e8f0;">設計と構造の話</strong>です。</p>
+
+  <!-- 50万円 × 2件 -->
+
+  <div class="deal-grid">
+
+```
+<!-- カード1 -->
+<div class="deal-card">
+  <!-- Coconala風モックUI -->
+  <div class="mock-ui">
+    <div class="mock-topbar">
+      <div class="mock-tabs">
+        <div class="mock-tab active">取引詳細</div>
+      </div>
+      <div class="mock-status-chip">取引中</div>
+    </div>
+    <div class="mock-product-row">
+      <div class="mock-product-thumb">⚡</div>
+      <div class="mock-product-name">Claude Code<br>自動化システム</div>
+    </div>
+    <div class="mock-amount-row">
+      <span class="mock-amount-lbl">合計金額</span>
+      <span class="mock-amount-val">500,000円</span>
+    </div>
+    <div class="mock-date-row">
+      <span class="mock-date-lbl">販売日</span>
+      <span class="mock-date-val">2026/4/2</span>
+    </div>
+    <div class="mock-steps">
+      <div class="mock-step">
+        <div class="mock-step-dot done"></div>
+        <div class="mock-step-lbl">購入完了</div>
+      </div>
+      <div class="mock-step-line done"></div>
+      <div class="mock-step">
+        <div class="mock-step-dot active"></div>
+        <div class="mock-step-lbl active">進行中</div>
+      </div>
+      <div class="mock-step-line"></div>
+      <div class="mock-step">
+        <div class="mock-step-dot"></div>
+        <div class="mock-step-lbl">納品送付</div>
+      </div>
+      <div class="mock-step-line"></div>
+      <div class="mock-step">
+        <div class="mock-step-dot"></div>
+        <div class="mock-step-lbl">完了</div>
+      </div>
+    </div>
+  </div>
+  <div class="deal-card-body">
+    <div class="deal-badge">⚡ 自動仕組みからの受注</div>
+    <div class="deal-ttl">Claude Codeが作った<br>仕組みから生まれた受注</div>
+    <div class="deal-amount">¥500,000<span>/ 1件</span></div>
+    <div class="deal-note">自分が動いていない間に、構造が機能した結果です。</div>
+  </div>
+</div>
+
+<!-- カード2 -->
+<div class="deal-card">
+  <div class="mock-ui">
+    <div class="mock-topbar">
+      <div class="mock-tabs">
+        <div class="mock-tab active">取引詳細</div>
+      </div>
+      <div class="mock-status-chip">取引中</div>
+    </div>
+    <div class="mock-product-row">
+      <div class="mock-product-thumb">🤖</div>
+      <div class="mock-product-name">AI自動化<br>デジタル商品</div>
+    </div>
+    <div class="mock-amount-row">
+      <span class="mock-amount-lbl">合計金額</span>
+      <span class="mock-amount-val">500,000円</span>
+    </div>
+    <div class="mock-date-row">
+      <span class="mock-date-lbl">販売日</span>
+      <span class="mock-date-val">2026/3/20</span>
+    </div>
+    <div class="mock-steps">
+      <div class="mock-step">
+        <div class="mock-step-dot done"></div>
+        <div class="mock-step-lbl">購入完了</div>
+      </div>
+      <div class="mock-step-line done"></div>
+      <div class="mock-step">
+        <div class="mock-step-dot active"></div>
+        <div class="mock-step-lbl active">進行中</div>
+      </div>
+      <div class="mock-step-line"></div>
+      <div class="mock-step">
+        <div class="mock-step-dot"></div>
+        <div class="mock-step-lbl">納品送付</div>
+      </div>
+      <div class="mock-step-line"></div>
+      <div class="mock-step">
+        <div class="mock-step-dot"></div>
+        <div class="mock-step-lbl">完了</div>
+      </div>
+    </div>
+  </div>
+  <div class="deal-card-body">
+    <div class="deal-badge">⚡ 同じ仕組みが再稼働</div>
+    <div class="deal-ttl">作業は1回。仕組みが<br>繰り返し機能する</div>
+    <div class="deal-amount">¥500,000<span>/ 1件</span></div>
+    <div class="deal-note">設計した構造が、また動きました。</div>
+  </div>
+</div>
+```
+
+  </div><!-- /.deal-grid -->
+
+  <!-- 総売上ダッシュボード -->
+
+  <div class="dashboard-card">
+    <!-- ヘッダー（白背景・Coconala風） -->
+    <div class="dash-header">
+      <div class="dash-header-top">
+        <div class="dash-header-title">サービス・ブログ分析</div>
+        <div class="dash-period-chip">過去1年間 ▾</div>
+      </div>
+      <div class="dash-tabs">
+        <div class="dash-tab active">サービス</div>
+        <div class="dash-tab">ブログ</div>
+      </div>
+    </div>
+
+```
+<!-- KPI4つ -->
+<div class="kpi-grid">
+  <div class="kpi-cell">
+    <div class="kpi-lbl">販売額</div>
+    <div class="kpi-val main">1,736万円</div>
+    <div class="kpi-sub">17,363,325円</div>
+  </div>
+  <div class="kpi-cell">
+    <div class="kpi-lbl">販売数</div>
+    <div class="kpi-val">270件</div>
+    <div class="kpi-sub">過去1年間</div>
+  </div>
+  <div class="kpi-cell">
+    <div class="kpi-lbl">閲覧数</div>
+    <div class="kpi-val">35,502</div>
+    <div class="kpi-sub">回</div>
+  </div>
+  <div class="kpi-cell">
+    <div class="kpi-lbl">表示数</div>
+    <div class="kpi-val">167,878</div>
+    <div class="kpi-sub">回</div>
+  </div>
+</div>
+
+<!-- ミニ棒グラフ（月次売上イメージ） -->
+<div class="mini-chart-wrap">
+  <div class="mini-chart-lbl">月次売上推移（イメージ）</div>
+  <div class="mini-bars">
+    <div class="mb" style="height:15%"></div>
+    <div class="mb" style="height:20%"></div>
+    <div class="mb" style="height:18%"></div>
+    <div class="mb" style="height:30%"></div>
+    <div class="mb" style="height:25%"></div>
+    <div class="mb" style="height:45%"></div>
+    <div class="mb" style="height:55%"></div>
+    <div class="mb" style="height:70%"></div>
+    <div class="mb" style="height:80%"></div>
+    <div class="mb" style="height:90%"></div>
+    <div class="mb peak" style="height:100%"></div>
+    <div class="mb" style="height:95%"></div>
+  </div>
+  <div style="display:flex;justify-content:space-between;padding:4px 0 12px;font-size:9px;color:#475569;">
+    <span>2025/3</span><span>2025/6</span><span>2025/9</span><span>2025/12</span><span>2026/2</span>
+  </div>
+</div>
+
+<div class="dash-body">
+  <div class="dash-badge">📊 Coconala サービス分析（過去1年）</div>
+  <div class="dash-ttl">去年の夏まで、何者でもありませんでした。</div>
+  <div class="dash-note">AIに出会い、設計を学び、構造を作った。それだけです。特別なスキルも、大きな資本も、フォロワーも必要ありませんでした。<strong style="color:#e2e8f0;">たった半年ほどで、この数字に辿り着きました。</strong></div>
+</div>
+```
+
+  </div><!-- /.dashboard-card -->
+
+  <!-- タイムライン -->
+
+  <div class="tl-badge">
+    <span class="tl-icon">🗓</span>
+    <div class="tl-txt">
+      <strong>去年の夏：</strong>AIを使いはじめる<br>
+      <strong>約半年後：</strong>Coconala 累計販売額 <strong>1,736万円超</strong> を達成<br>
+      <span style="color:#6ee7b7;font-size:12px;">— 変わったのは、努力量ではなく「設計」でした。</span>
+    </div>
+  </div>
+
+  <!-- 本物実績リンクバナー -->
+
+<a class="real-proof-banner"
+href="https://www.notion.so/3423dd99133f80f0ba55d136f6ffaa67"
+target="_blank" rel="noopener">
+<div class="rpb-inner">
+<div class="rpb-content">
+
+```
+    <!-- シール -->
+    <div class="rpb-seal">本物<br>実績</div>
+
+    <!-- テキスト -->
+    <div class="rpb-text">
+      <div class="rpb-label">Real Proof</div>
+      <div class="rpb-title">
+        イメージ画像ではない、<br>
+        <span class="gold">正真正銘、ホンモノの実績一覧</span>です
+      </div>
+      <div class="rpb-sub">
+        Coconalaの取引データを、そのまま公開しています
+      </div>
+    </div>
+
+    <!-- 矢印 -->
+    <div class="rpb-arrow">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="5" y1="12" x2="19" y2="12"/>
+        <polyline points="12 5 19 12 12 19"/>
+      </svg>
+    </div>
+
+  </div>
+  <!-- テープ下部 -->
+  <div class="rpb-tape">
+    <div class="rpb-tape-left">
+      <div class="rpb-tape-dot"></div>
+      Notionで公開中・随時更新
+    </div>
+    <div class="rpb-tape-right">
+      実績を確認する →
+    </div>
+  </div>
+</div>
+```
+
+  </a>
+
+</div><!-- /.result-sec -->
+
+<!-- モニター生実績 -->
+
+<div class="monitor-sec" id="monitors">
+  <span class="monitor-stag">🌟 モニター生の実績</span>
+  <h2 class="monitor-ttl">仕組みを渡された方の結果</h2>
+  <p class="monitor-lead">「自分には無理かも…」という声をよく聞きます。でも、これを見てください。<br>ツールに沿って動いただけで、こんな結果が出ています。</p>
+
+  <div class="voice-grid">
+
+```
+<!-- 声1：2ヶ月半で162万 -->
+<div class="voice-card">
+  <div class="voice-bubble">
+    <div class="voice-text">
+      今ですか？正確には<strong>2ヶ月半</strong>です！<br>
+      初月 20万ちょっと → 2ヶ月目 <strong>86万</strong> → 3ヶ月目(途中) <strong>56万</strong><br>
+      ツールめちゃくちゃ使いやすくて時間無い私でもガンガン回せてます😭
+    </div>
+  </div>
+  <div class="voice-stats">
+    <div class="voice-stats-header">
+      <span class="voice-stats-title">サービス・提案実績</span>
+      <span class="voice-period-chip">3ヶ月</span>
+    </div>
+    <div class="voice-kpi-row">
+      <div class="voice-kpi">
+        <div class="voice-kpi-val gold">163万円</div>
+        <div class="voice-kpi-lbl">販売額</div>
+      </div>
+      <div class="voice-kpi">
+        <div class="voice-kpi-val">103件</div>
+        <div class="voice-kpi-lbl">販売件数</div>
+      </div>
+    </div>
+    <div class="voice-progress">
+      <div class="voice-progress-lbl"><span>納品完了率</span><span>100%</span></div>
+      <div class="voice-progress-bar"><div class="voice-progress-fill" style="width:100%"></div></div>
+    </div>
+    <div class="voice-mini-bars">
+      <div class="vmb" style="height:25%"></div>
+      <div class="vmb" style="height:35%"></div>
+      <div class="vmb hi" style="height:100%"></div>
+      <div class="vmb hi" style="height:65%"></div>
+      <div class="vmb" style="height:55%"></div>
+      <div class="vmb" style="height:48%"></div>
+    </div>
+  </div>
+  <div class="voice-user">
+    <div class="voice-avatar" style="background:linear-gradient(135deg,#1d4ed8,#38bdf8);">A</div>
+    <div>
+      <div class="voice-name">Aさん（副業・時間なし）</div>
+    </div>
+    <span class="voice-period-badge">開始2.5ヶ月</span>
+  </div>
+</div>
+
+<!-- 声2：3ヶ月で120万 -->
+<div class="voice-card">
+  <div class="voice-bubble">
+    <div class="voice-text">
+      4月でちょうどモニター始めて<strong>3ヶ月</strong>になります。<br>
+      実績<strong>100万超えました</strong>。特に意識してやった事もなく、<br>
+      ツール通りに淡々と進めただけでこれはちょっとやばいと思います。
+    </div>
+  </div>
+  <div class="voice-stats">
+    <div class="voice-stats-header">
+      <span class="voice-stats-title">サービス・提案実績</span>
+      <span class="voice-period-chip">3ヶ月</span>
+    </div>
+    <div class="voice-kpi-row">
+      <div class="voice-kpi">
+        <div class="voice-kpi-val gold">120万円</div>
+        <div class="voice-kpi-lbl">販売額</div>
+      </div>
+      <div class="voice-kpi">
+        <div class="voice-kpi-val">96件</div>
+        <div class="voice-kpi-lbl">販売件数</div>
+      </div>
+    </div>
+    <div class="voice-progress">
+      <div class="voice-progress-lbl"><span>納品完了率</span><span>100%</span></div>
+      <div class="voice-progress-bar"><div class="voice-progress-fill" style="width:100%"></div></div>
+    </div>
+    <div class="voice-mini-bars">
+      <div class="vmb" style="height:20%"></div>
+      <div class="vmb" style="height:40%"></div>
+      <div class="vmb" style="height:55%"></div>
+      <div class="vmb hi" style="height:85%"></div>
+      <div class="vmb hi" style="height:100%"></div>
+      <div class="vmb" style="height:90%"></div>
+    </div>
+  </div>
+  <div class="voice-user">
+    <div class="voice-avatar" style="background:linear-gradient(135deg,#059669,#34d399);">B</div>
+    <div>
+      <div class="voice-name">Bさん（ツール通りに実践）</div>
+    </div>
+    <span class="voice-period-badge">開始3ヶ月</span>
+  </div>
+</div>
+
+<!-- 声3：3ヶ月で104万 -->
+<div class="voice-card">
+  <div class="voice-bubble">
+    <div class="voice-text">
+      ようやく<strong>3ヶ月目で売上100万超えました</strong>‼ うれしい🥹<br>
+      50万超えたあたりから停滞気味だったのですが、リサーチ機能があるので改善頑張ったらあっという間でした🐣
+    </div>
+  </div>
+  <div class="voice-stats">
+    <div class="voice-stats-header">
+      <span class="voice-stats-title">サービス・提案実績</span>
+      <span class="voice-period-chip">3ヶ月</span>
+    </div>
+    <div class="voice-kpi-row">
+      <div class="voice-kpi">
+        <div class="voice-kpi-val gold">104万円</div>
+        <div class="voice-kpi-lbl">販売額</div>
+      </div>
+      <div class="voice-kpi">
+        <div class="voice-kpi-val">108件</div>
+        <div class="voice-kpi-lbl">販売件数</div>
+      </div>
+    </div>
+    <div class="voice-progress">
+      <div class="voice-progress-lbl"><span>納品完了率</span><span>100%</span></div>
+      <div class="voice-progress-bar"><div class="voice-progress-fill" style="width:100%"></div></div>
+    </div>
+    <div class="voice-mini-bars">
+      <div class="vmb" style="height:20%"></div>
+      <div class="vmb" style="height:30%"></div>
+      <div class="vmb" style="height:45%"></div>
+      <div class="vmb" style="height:50%"></div>
+      <div class="vmb hi" style="height:80%"></div>
+      <div class="vmb hi" style="height:100%"></div>
+    </div>
+  </div>
+  <div class="voice-user">
+    <div class="voice-avatar" style="background:linear-gradient(135deg,#d97706,#fbbf24);">C</div>
+    <div>
+      <div class="voice-name">Cさん（改善で突破）</div>
+    </div>
+    <span class="voice-period-badge">開始3ヶ月</span>
+  </div>
+</div>
+
+<!-- 声4：今月80超・3ヶ月218万 -->
+<div class="voice-card">
+  <div class="voice-bubble">
+    <div class="voice-text">
+      4月まだ途中ですけど、<strong>今月だけで80超えてます</strong>ww<br>
+      実績も増えてきたのでオプション高単価をツールに相談して作ってフル稼働です！<br>
+      1件5万のオプションとかもボチボチ売れるようになってきてます🙏
+    </div>
+  </div>
+  <div class="voice-stats">
+    <div class="voice-stats-header">
+      <span class="voice-stats-title">サービス・提案実績</span>
+      <span class="voice-period-chip">3ヶ月</span>
+    </div>
+    <div class="voice-kpi-row">
+      <div class="voice-kpi">
+        <div class="voice-kpi-val gold">218万円</div>
+        <div class="voice-kpi-lbl">販売額（3ヶ月）</div>
+      </div>
+      <div class="voice-kpi">
+        <div class="voice-kpi-val">123件</div>
+        <div class="voice-kpi-lbl">販売件数</div>
+      </div>
+    </div>
+    <div class="voice-progress">
+      <div class="voice-progress-lbl"><span>今月の進捗</span><span>80万超（途中）</span></div>
+      <div class="voice-progress-bar"><div class="voice-progress-fill green" style="width:80%"></div></div>
+    </div>
+    <div class="voice-mini-bars">
+      <div class="vmb" style="height:30%"></div>
+      <div class="vmb" style="height:50%"></div>
+      <div class="vmb hi" style="height:85%"></div>
+      <div class="vmb hi" style="height:100%"></div>
+      <div class="vmb" style="height:95%"></div>
+      <div class="vmb" style="height:90%"></div>
+    </div>
+  </div>
+  <div class="voice-user">
+    <div class="voice-avatar" style="background:linear-gradient(135deg,#db2777,#f472b6);">D</div>
+    <div>
+      <div class="voice-name">Dさん（高単価オプション展開）</div>
+    </div>
+    <span class="voice-period-badge">今月80万超</span>
+  </div>
+</div>
+```
+
+  </div><!-- /.voice-grid -->
+
+  <!-- 総合サマリー -->
+
+  <div class="monitor-summary">
+    <div class="monitor-summary-ttl">
+      <span>📊</span> モニター生 全体サマリー
+    </div>
+    <div class="monitor-sum-grid">
+      <div class="msum-item">
+        <div class="msum-val">4名</div>
+        <div class="msum-lbl">掲載モニター<br>生徒数</div>
+      </div>
+      <div class="msum-item">
+        <div class="msum-val">100%</div>
+        <div class="msum-lbl">3ヶ月以内に<br>100万円達成</div>
+      </div>
+      <div class="msum-item">
+        <div class="msum-val">★5.0</div>
+        <div class="msum-lbl">全員<br>平均評価</div>
+      </div>
+    </div>
+    <p style="font-size:12px;color:#6b21a8;margin-top:10px;line-height:1.7;">
+      特別な才能も、最初からのフォロワーも必要ありませんでした。<br>
+      <strong>「設計を学んで、ツール通りに動く」—— それだけで、これだけの結果が出ています。</strong>
+    </p>
+  </div>
+
+</div><!-- /.monitor-sec -->
+
+<!-- S2 -->
+
+<div class="sec" id="s2">
+  <span class="stag">Section 02</span>
+  <h2 class="st">「構造」という言葉を<br>具体的に定義する</h2>
+  <p class="bt">「構造」という言葉は抽象的に聞こえます。具体的に言い換えます。</p>
+  <p class="bt">売上が立ちやすくなる構造とは、<strong>以下の8つの要素が噛み合っている状態</strong>のことです。</p>
+  <div class="sdiag">
+    <div class="sdiag-t">▍ 売上が"流れ"になる 8つの構造要素</div>
+    <div class="sgrid">
+      <div class="si"><div class="si-n">01</div><div class="si-t">商品本体</div><div class="si-d">需要に刺さっているか</div></div>
+      <div class="si"><div class="si-n">02</div><div class="si-t">商品説明文</div><div class="si-d">「これだ」と感じさせるか</div></div>
+      <div class="si"><div class="si-n">03</div><div class="si-t">サムネイル</div><div class="si-d">検索結果で止まるか</div></div>
+      <div class="si"><div class="si-n">04</div><div class="si-t">特典・オプション</div><div class="si-d">購入を後押しするか</div></div>
+      <div class="si"><div class="si-n">05</div><div class="si-t">CTA</div><div class="si-d">次の行動を促すか</div></div>
+      <div class="si"><div class="si-n">06</div><div class="si-t">検索需要との一致</div><div class="si-d">探されている言葉か</div></div>
+      <div class="si"><div class="si-n">07</div><div class="si-t">購入後の満足度</div><div class="si-d">口コミ・再購入が生まれるか</div></div>
+      <div class="si"><div class="si-n">08</div><div class="si-t">改善サイクル</div><div class="si-d">出し直しができているか</div></div>
+    </div>
+    <div class="sarr"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2"><line x1="12" y1="4" x2="12" y2="18"/><polyline points="6 13 12 19 18 13"/></svg></div>
+    <div class="sres"><div class="sres-l">8要素が噛み合うと</div><div class="sres-t">売上が「点」から「流れ」に変わる</div></div>
+  </div>
+  <p class="bt">これが全部バラバラだと、売上は「点」にしかなりません。でも、これが噛み合ったとき、売上は「流れ」になります。</p>
+  <p class="bt">自分が動いていない夜中や休日にも、この構造が機能し続ける。それが<strong>"寝てても回る"の正体</strong>です。</p>
+</div>
+
+<!-- S3 -->
+
+<div class="sec" id="s3">
+  <span class="stag">Section 03</span>
+  <h2 class="st">Coconalaがこの仕組みと<br>相性が良い理由</h2>
+  <p class="bt">SNSで集客しようとすると、毎回ゼロから注目を集め直す必要があります。投稿が流れれば終わり。フォロワーが見ていなければ届きません。</p>
+  <p class="bt">Coconalaは違います。<strong>需要がすでに存在する場所</strong>です。</p>
+  <div class="plat">
+    <div class="pc sns">
+      <div class="pc-ico">📱</div><div class="pc-t">SNS集客</div>
+      <div class="pc-r">投稿が流れると消える</div>
+      <div class="pc-r">毎回ゼロからスタート</div>
+      <div class="pc-r">フォロワーがいないと届かない</div>
+      <div class="pc-r">需要を自分で作る必要がある</div>
+      <div class="pc-r">継続投稿の消耗が大きい</div>
+    </div>
+    <div class="pc cnl">
+      <div class="pc-ico">🛒</div><div class="pc-t">Coconala</div>
+      <div class="pc-r">需要がすでに存在する</div>
+      <div class="pc-r">明確な意図で検索される</div>
+      <div class="pc-r">出品後も改善で伸ばせる</div>
+      <div class="pc-r">設計と見せ方で差がつく</div>
+      <div class="pc-r">構造が機能し続ける</div>
+    </div>
+  </div>
+  <p class="bt">ユーザーは「○○を依頼したい」「○○のツールが欲しい」という明確な意図を持って検索しています。あなたの商品が検索に引っかかり、「これだ」と思ってもらえれば、それだけで売上が立ちます。</p>
+  <div class="cb blue">
+    <div class="cb-lbl">Key Point</div>
+    <p>競合が多い場所ほど、設計と見せ方で差がつきます。同じ内容の商品でも、説明文の構成・サムネの印象・特典の有無で、転換率は大きく変わります。Coconalaは「出した後に改善して伸ばせる」市場です。</p>
+  </div>
+</div>
+
+<!-- S4 -->
+
+<div class="sec" id="s4">
+  <span class="stag">Section 04</span>
+  <h2 class="st">Claude Codeをどう活用しているか</h2>
+  <p class="bt">Claude Codeを使っていると話すと、「文章生成ツールですよね」と思われることがあります。でも、それだけではありません。</p>
+  <p class="bt">Claude Codeは、<strong>商品化の速度を上げる道具</strong>として活用しています。</p>
+  <div class="ccdiag">
+    <div class="ccdiag-t">Claude Code 活用フロー — 商品化の流れ</div>
+    <div class="ccflow">
+      <div class="ccs"><div class="ccs-ico">💡</div><div><div class="ccs-l">アイデア・需要調査</div><div class="ccs-d">検索需要を確認してから商品を設計する</div></div></div>
+      <div class="cca">↓</div>
+      <div class="ccs"><div class="ccs-ico">⚡</div><div><div class="ccs-l">Claude Codeで高速試作</div><div class="ccs-d">Webアプリ・診断ツール・テンプレートを短時間で生成</div></div></div>
+      <div class="cca">↓</div>
+      <div class="ccs"><div class="ccs-ico">📦</div><div><div class="ccs-l">「売れる形」に変換して出品</div><div class="ccs-d">説明文・サムネ・特典も整えてから出す</div></div></div>
+      <div class="cca">↓</div>
+      <div class="ccs"><div class="ccs-ico">🔄</div><div><div class="ccs-l">データを見て改善・出し直し</div><div class="ccs-d">反応を見てすぐ改善できるのがClaude Codeの強み</div></div></div>
+      <div class="cca">↓</div>
+      <div class="ccchips">
+        <div class="ccchip">Webアプリ</div><div class="ccchip">診断ツール</div><div class="ccchip">テンプレ</div>
+        <div class="ccchip">PDF資料</div><div class="ccchip">特典素材</div><div class="ccchip">説明文</div>
+      </div>
+    </div>
+  </div>
+  <div class="cb amber">
+    <div class="cb-lbl">重要な考え方</div>
+    <p>「AIで楽をする」のではなく、「AIで速度を上げ、設計に集中できる時間を作る」という使い方が大切です。試作→改善→出し直しのサイクルが速くなることで、売れる形に近づくスピードが上がります。</p>
+  </div>
+</div>
+
+<!-- S5 -->
+
+<div class="sec" id="s5">
+  <span class="stag">Section 05</span>
+  <h2 class="st">売れない人がやりがちな<br>6つの勘違い</h2>
+  <p class="bt">ここが、この記事で最も重要な部分かもしれません。</p>
+  <div class="mlist">
+    <div class="mi"><div class="mi-n">01</div><div class="mi-t">「商品を作れば売れる」と思っている</div><div class="mi-b">作ること自体は出発点に過ぎません。出した後に、見せ方・説明・導線を整えることが本番です。</div></div>
+    <div class="mi"><div class="mi-n">02</div><div class="mi-t">説明文やサムネを「まあいいか」で済ませている</div><div class="mi-b">検索結果で止まってもらえなければ、どんなに良い商品でも目に入りません。看板のない店を開けているようなものです。</div></div>
+    <div class="mi"><div class="mi-n">03</div><div class="mi-t">誰向けかが曖昧なまま出している</div><div class="mi-b">「AIに興味がある人向け」では広すぎます。ターゲットを絞ることで、刺さる言葉が変わります。</div></div>
+    <div class="mi"><div class="mi-n">04</div><div class="mi-t">Coconalaの検索需要・競合を確認していない</div><div class="mi-b">自分が作りたいものではなく、探されているものを作る。この前提を持っているかどうかで、出発点が全く変わります。</div></div>
+    <div class="mi"><div class="mi-n">05</div><div class="mi-t">単発販売の発想しかない</div><div class="mi-b">1件売って終わりという発想だと、売上は点にしかなりません。オプション・特典・アップセルの設計で、1件の購入が流れになります。</div></div>
+    <div class="mi"><div class="mi-n">06</div><div class="mi-t">自分の作業量を増やす方向でしか考えていない</div><div class="mi-b">「もっと頑張ればいい」は直線的な発想です。構造を整えることで、同じ作業量でも結果が変わる可能性があります。</div></div>
+  </div>
+</div>
+
+<!-- S6 -->
+
+<div class="sec" id="s6">
+  <span class="stag">Section 06</span>
+  <h2 class="st">最初に持つべき視点</h2>
+  <p class="bt">「何から始めればいいか」という質問をよくいただきます。答えはシンプルです。<strong>需要が見えやすく、説明しやすく、改善しやすい商品から始める</strong>ことです。</p>
+  <div class="pcards">
+    <div class="pcard"><div class="pcard-ico">🎯</div><div><div class="pcard-t">大型商品を最初から狙わない</div><div class="pcard-d">まず出して反応を見ることが大切です。出してみないと、何が刺さるかはわかりません。</div></div></div>
+    <div class="pcard"><div class="pcard-ico">📊</div><div><div class="pcard-t">出した後のデータが最も正確な情報源</div><div class="pcard-d">改善は、出した後にしかできません。「まず出すこと」が重要で、「完璧にしてから出すこと」は罠です。</div></div></div>
+    <div class="pcard"><div class="pcard-ico">⚡</div><div><div class="pcard-t">AIは「速度を上げる」ために使う</div><div class="pcard-d">楽をするためではなく、試作と改善のサイクルを速くするために使います。方向性を決めるのは人間です。</div></div></div>
+  </div>
+</div>
+
+<!-- S7 -->
+
+<div class="sec" id="s7">
+  <span class="stag">Section 07</span>
+  <h2 class="st">難しさについても<br>正直にお伝えします</h2>
+  <div class="cb amber">
+    <div class="cb-lbl">注意点</div>
+    <p>この記事を読んで「簡単そうだ」と思わないでください。構造を作るには観察が必要です。売れない原因を分析する視点が必要です。改善して、また検証して、またやり直す——そのループを回せる人が、結果的に売上の流れを手にします。</p>
+  </div>
+  <p class="bt">AIはそのプロセスを加速してくれます。でも、方向性を決めるのは人間です。設計の判断を下すのも人間です。</p>
+  <div class="qb"><p>「ショートカットがある」という話ではなく、「構造を理解した人が最短に近づける」という話です。</p></div>
+  <hr class="dv">
+  <p class="bt">今回の記事では、「仕組み化とは何か」「なぜそれが大事か」「何が売上の構造を作るか」をお伝えしました。ただ、これは全体の土台部分です。</p>
+  <p class="bt">実際にどう商品設計するか、どう改善サイクルを回すか、Claude Codeをどのステップで使うか——その具体的な話は、次の機会に改めてお伝えします。</p>
+  <div class="cb green">
+    <div class="cb-lbl">次のコンテンツについて</div>
+    <p>「なるほど、構造の話か」と感じていただけた方は、次の内容もぜひご覧ください。今日の話が前提になります。</p>
+  </div>
+</div>
+
+<!-- LINE CTA -->
+
+<div class="cta-sec" id="cta">
+  <span class="cta-stag">🎁 読者限定プレゼント</span>
+  <h2 class="cta-ttl">最後まで読んでくださった方へ<br>特典をプレゼントします</h2>
+  <p class="cta-sub">感謝の気持ちを込めて、この記事の読者さん限定で特典をご用意しました。</p>
+  <div class="gift-card">
+    <div class="gift-card-ttl">✦ 無料プレゼント</div>
+    <p><strong>初心者向け「Coconala × 自動化AI」チェックシート</strong><br><br>この記事でお伝えした8つの構造要素をもとに、何が揃っていて何が足りないかをすぐ確認できるチェックシートにまとめました。<br><br>下のボタンからLINEに参加して、<strong>「記事を読みました」とメッセージを送ってくださった方に無料でお渡しします。</strong></p>
+  </div>
+  <a href="https://lin.ee/zLb5Hgu" class="line-btn" target="_blank" rel="noopener">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="#ffffff"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63.349 0 .631.285.631.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
+    LINEで感想を送って特典を受け取る
+  </a>
+  <p class="cta-note">※ LINEに参加後、「記事を読みました」とメッセージをお送りください。確認次第、チェックシートをお渡しします。</p>
+</div>
+
+<footer><p>Coconala × Claude Code ｜ 教育コンテンツ ｜ 無断転載禁止</p></footer>
+
+<script>
+/* ═══════════════════════════════════════
+   NEBULA STAR FIELD + SHOOTING STARS
+═══════════════════════════════════════ */
+(function(){
+  const canvas = document.getElementById('star-canvas');
+  const ctx    = canvas.getContext('2d');
+
+  let W, H;
+  const STARS   = [];
+  const SHOOTS  = [];
+  const TWINKLE = [];
+
+  /* リサイズ */
+  function resize(){
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  /* 星を生成 */
+  function initStars(){
+    STARS.length = 0;
+    const count = Math.floor((W * H) / 6000);
+    for(let i=0;i<count;i++){
+      STARS.push({
+        x: Math.random()*W,
+        y: Math.random()*H,
+        r: Math.random()*1.2 + 0.2,
+        a: Math.random(),
+        da: (Math.random()-0.5)*0.008,
+        color: Math.random()<0.15
+          ? `hsl(${40+Math.random()*20},80%,75%)`  /* ゴールド系 */
+          : Math.random()<0.2
+            ? `hsl(${270+Math.random()*30},70%,80%)` /* パープル系 */
+            : '#ffffff'
+      });
+    }
+    /* きらきら大きめ星 */
+    TWINKLE.length = 0;
+    const tc = Math.floor((W*H)/20000);
+    for(let i=0;i<tc;i++){
+      TWINKLE.push({
+        x: Math.random()*W,
+        y: Math.random()*H,
+        r: Math.random()*2.5+1.2,
+        a: Math.random(),
+        da: (Math.random()-0.5)*0.015,
+        rot: Math.random()*Math.PI*2,
+        drot: (Math.random()-0.5)*0.02,
+        spikes: Math.random()<0.5 ? 4 : 6,
+        color: Math.random()<0.4
+          ? `hsl(${42+Math.random()*12},90%,72%)`
+          : `hsl(${270+Math.random()*40},80%,85%)`
+      });
+    }
+  }
+  initStars();
+  window.addEventListener('resize', initStars);
+
+  /* 流れ星クラス */
+  function newShoot(){
+    const side = Math.random()<0.7;
+    return {
+      x:  side ? -40 : Math.random()*W,
+      y:  side ? Math.random()*H*0.6 : -40,
+      vx: side ? Math.random()*6+5 : Math.random()*4+3,
+      vy: side ? Math.random()*4+3 : Math.random()*6+5,
+      len: Math.random()*120+80,
+      a:  1,
+      da: Math.random()*0.025+0.015,
+      w:  Math.random()*1.5+0.8,
+      color: Math.random()<0.35
+        ? `rgba(232,201,106,`  /* ゴールド */
+        : Math.random()<0.5
+          ? `rgba(192,132,252,` /* パープル */
+          : `rgba(255,255,255,`  /* 白 */
+    };
+  }
+
+  /* 放射状スパーク描画 */
+  function drawStar(ctx, x, y, r, spikes, a, rot, color){
+    ctx.save();
+    ctx.globalAlpha = a;
+    ctx.translate(x,y);
+    ctx.rotate(rot);
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = color;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    for(let i=0;i<spikes*2;i++){
+      const rad = i%2===0 ? r : r*0.4;
+      const angle = (i/spikes/2)*Math.PI*2;
+      i===0 ? ctx.moveTo(Math.cos(angle)*rad, Math.sin(angle)*rad)
+             : ctx.lineTo(Math.cos(angle)*rad, Math.sin(angle)*rad);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  /* 流れ星を定期追加 */
+  function maybeAddShoot(){
+    if(SHOOTS.length < 4 && Math.random()<0.018) SHOOTS.push(newShoot());
+  }
+
+  let lastTime = 0;
+  function frame(ts){
+    requestAnimationFrame(frame);
+    const dt = ts - lastTime;
+    if(dt < 16){ return; }
+    lastTime = ts;
+
+    ctx.clearRect(0,0,W,H);
+
+    /* 通常星 */
+    STARS.forEach(s=>{
+      s.a += s.da;
+      if(s.a<=0||s.a>=1) s.da=-s.da;
+      ctx.globalAlpha = Math.max(0.05, Math.min(1, s.a));
+      ctx.shadowBlur  = 0;
+      ctx.fillStyle   = s.color;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+      ctx.fill();
+    });
+
+    /* きらきら星 */
+    TWINKLE.forEach(t=>{
+      t.a   += t.da;
+      t.rot += t.drot;
+      if(t.a<=0.1||t.a>=1) t.da=-t.da;
+      drawStar(ctx, t.x, t.y, t.r, t.spikes, Math.max(0.1,t.a), t.rot, t.color);
+    });
+
+    /* 流れ星 */
+    maybeAddShoot();
+    for(let i=SHOOTS.length-1;i>=0;i--){
+      const s = SHOOTS[i];
+      s.x += s.vx; s.y += s.vy; s.a -= s.da;
+      if(s.a<=0){ SHOOTS.splice(i,1); continue; }
+
+      /* テール */
+      const grad = ctx.createLinearGradient(
+        s.x - s.vx/Math.hypot(s.vx,s.vy)*s.len,
+        s.y - s.vy/Math.hypot(s.vx,s.vy)*s.len,
+        s.x, s.y
+      );
+      grad.addColorStop(0, s.color+'0)');
+      grad.addColorStop(0.7, s.color+(s.a*0.5)+')');
+      grad.addColorStop(1,   s.color+(s.a)+')');
+
+      ctx.save();
+      ctx.globalAlpha = 1;
+      ctx.shadowBlur  = 10;
+      ctx.shadowColor = s.color+(s.a)+')';
+      ctx.strokeStyle = grad;
+      ctx.lineWidth   = s.w;
+      ctx.lineCap     = 'round';
+      ctx.beginPath();
+      ctx.moveTo(
+        s.x - s.vx/Math.hypot(s.vx,s.vy)*s.len,
+        s.y - s.vy/Math.hypot(s.vx,s.vy)*s.len
+      );
+      ctx.lineTo(s.x, s.y);
+      ctx.stroke();
+
+      /* ヘッドグロー */
+      const hg = ctx.createRadialGradient(s.x,s.y,0, s.x,s.y,4);
+      hg.addColorStop(0, s.color+(s.a)+')');
+      hg.addColorStop(1, s.color+'0)');
+      ctx.fillStyle = hg;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, 4, 0, Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+
+      /* 画面外に出たら除去 */
+      if(s.x>W+100 || s.y>H+100) SHOOTS.splice(i,1);
+    }
+
+    ctx.globalAlpha = 1;
+    ctx.shadowBlur  = 0;
+  }
+  requestAnimationFrame(frame);
+
+})();
+
+/* ══ 進捗バー ══ */
+const bar=document.getElementById('prog');
+window.addEventListener('scroll',()=>{
+  const tot=document.documentElement.scrollHeight-window.innerHeight;
+  bar.style.width=(window.scrollY/tot*100)+'%';
+});
+
+/* ══ スクロール表示 ══ */
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('show');});
+},{threshold:0.05,rootMargin:'0px 0px -20px 0px'});
+document.querySelectorAll('.sec:not(.show),.result-sec,.monitor-sec,.cta-sec').forEach(el=>obs.observe(el));
+</script>
+
+</body>
+</html>
